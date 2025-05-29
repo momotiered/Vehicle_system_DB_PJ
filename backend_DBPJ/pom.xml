@@ -17,7 +17,7 @@
     
     <properties>
         <java.version>1.8</java.version>
-        <lombok.version>1.18.24</lombok.version>
+        <lombok.version>1.18.30</lombok.version>
         <hibernate.version>5.6.9.Final</hibernate.version>
     </properties>
     
@@ -88,6 +88,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <mainClass>com.vehicle.repair.VehicleRepairApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
