@@ -97,23 +97,14 @@ const handleLogin = async () => {
 
     loading.value = true
     
-    // 模拟登录成功（因为后端还没有登录接口）
-    // 实际项目中应该调用 userStore.login(loginForm)
-    const success = await userStore.register({
+    console.log('开始登录请求', loginForm)
+    
+    const success = await userStore.login({
       username: loginForm.username,
-      passwordHash: loginForm.password,
-      fullName: loginForm.username // 临时使用用户名作为全名
+      password: loginForm.password
     })
 
     if (success) {
-      // 模拟设置用户信息
-      userStore.setUser({
-        userId: 1,
-        username: loginForm.username,
-        fullName: loginForm.username
-      })
-      userStore.setToken('mock-token-' + Date.now())
-      
       ElMessage.success('登录成功')
       router.push('/dashboard')
     } else {
@@ -121,7 +112,20 @@ const handleLogin = async () => {
     }
   } catch (error) {
     console.error('登录错误:', error)
-    ElMessage.error('登录失败，请稍后重试')
+    let errorMessage = '登录失败，请稍后重试'
+    
+    if (error.response) {
+      console.error('响应数据:', error.response.data)
+      console.error('响应状态:', error.response.status)
+      
+      if (error.response.status === 404) {
+        errorMessage = '登录接口不存在，请联系管理员'
+      } else if (error.response.data?.message) {
+        errorMessage = error.response.data.message
+      }
+    }
+    
+    ElMessage.error(errorMessage)
   } finally {
     loading.value = false
   }

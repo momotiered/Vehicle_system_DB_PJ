@@ -1,8 +1,20 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import { 
+  Setting, 
+  User, 
+  Tickets, 
+  Van, 
+  Tools, 
+  CircleCheck, 
+  Document,
+  Share,
+  Box,
+  ArrowDown
+} from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,7 +25,34 @@ const showLayout = computed(() => {
   return !['Login', 'Register'].includes(route.name)
 })
 
-const currentUser = computed(() => userStore.currentUser)
+const currentUser = computed(() => userStore.user)
+const isLoggedIn = computed(() => !!userStore.token)
+const isAdmin = computed(() => currentUser.value?.role === 'ADMIN')
+const isTechnician = computed(() => currentUser.value?.role === 'TECHNICIAN')
+
+// 菜单折叠状态
+const isCollapse = ref(false)
+const toggleSidebar = () => {
+  isCollapse.value = !isCollapse.value
+}
+
+// 用于侧边栏的路由匹配
+const activeMenu = ref('/')
+watch(() => route.path, (path) => {
+  if (path.startsWith('/users')) {
+    activeMenu.value = '/users'
+  } else if (path.startsWith('/vehicles')) {
+    activeMenu.value = '/vehicles'
+  } else if (path.startsWith('/repair-orders')) {
+    activeMenu.value = '/repair-orders'
+  } else if (path.startsWith('/technician')) {
+    activeMenu.value = '/technician/dashboard'
+  } else if (path.startsWith('/materials')) {
+    activeMenu.value = '/materials'
+  } else {
+    activeMenu.value = path
+  }
+}, { immediate: true })
 
 const handleCommand = (command) => {
   switch (command) {
@@ -27,6 +66,11 @@ const handleCommand = (command) => {
       router.push('/login')
       break
   }
+}
+
+// 处理登出
+const handleLogout = () => {
+  userStore.logout()
 }
 </script>
 
@@ -57,46 +101,56 @@ const handleCommand = (command) => {
 
       <el-container>
         <!-- 侧边栏 -->
-        <el-aside width="200px" class="sidebar">
+        <el-aside width="200px" class="sidebar" v-if="isLoggedIn">
+          <div class="sidebar-header">
+            <h1 class="app-title" v-if="!isCollapse">车辆维修管理</h1>
+            <h1 class="app-title-collapsed" v-else>车修</h1>
+            <el-icon class="toggle-btn" @click="toggleSidebar">
+              <Share />
+            </el-icon>
+          </div>
+          
           <el-menu
-            :default-active="$route.path"
+            :default-active="activeMenu"
+            class="sidebar-menu"
+            :collapse="isCollapse"
+            :collapse-transition="false"
             router
-            class="el-menu-vertical"
-            background-color="#545c64"
-            text-color="#fff"
-            active-text-color="#ffd04b"
           >
             <el-menu-item index="/dashboard">
-              <el-icon><House /></el-icon>
-              <span>仪表板</span>
+              <el-icon><Document /></el-icon>
+              <template #title>仪表板</template>
+            </el-menu-item>
+
+            <el-menu-item index="/user-center">
+              <el-icon><User /></el-icon>
+              <template #title>用户中心</template>
             </el-menu-item>
             
-            <el-sub-menu index="users">
-              <template #title>
-                <el-icon><User /></el-icon>
-                <span>用户管理</span>
-              </template>
-              <el-menu-item index="/users">用户列表</el-menu-item>
-              <el-menu-item index="/users/create">添加用户</el-menu-item>
-            </el-sub-menu>
-
-            <el-sub-menu index="vehicles">
-              <template #title>
-                <el-icon><Van /></el-icon>
-                <span>车辆管理</span>
-              </template>
-              <el-menu-item index="/vehicles">车辆列表</el-menu-item>
-              <el-menu-item index="/vehicles/create">添加车辆</el-menu-item>
-            </el-sub-menu>
-
-            <el-sub-menu index="repair-orders">
-              <template #title>
-                <el-icon><Tools /></el-icon>
-                <span>维修工单</span>
-              </template>
-              <el-menu-item index="/repair-orders">工单列表</el-menu-item>
-              <el-menu-item index="/repair-orders/create">创建工单</el-menu-item>
-            </el-sub-menu>
+            <el-menu-item index="/vehicles" v-if="isAdmin">
+              <el-icon><Van /></el-icon>
+              <template #title>车辆管理</template>
+            </el-menu-item>
+            
+            <el-menu-item index="/repair-orders">
+              <el-icon><Tools /></el-icon>
+              <template #title>维修工单</template>
+            </el-menu-item>
+            
+            <el-menu-item index="/technician/dashboard" v-if="isTechnician">
+              <el-icon><Setting /></el-icon>
+              <template #title>技术人员工作台</template>
+            </el-menu-item>
+            
+            <el-menu-item index="/materials" v-if="isAdmin">
+              <el-icon><Box /></el-icon>
+              <template #title>维修材料管理</template>
+            </el-menu-item>
+            
+            <el-menu-item index="/users" v-if="isAdmin">
+              <el-icon><User /></el-icon>
+              <template #title>用户管理</template>
+            </el-menu-item>
           </el-menu>
         </el-aside>
 
@@ -190,5 +244,85 @@ html, body, #app {
 
 .el-menu-vertical {
   border-right: none;
+}
+
+.sidebar-header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  color: white;
+}
+
+.app-title {
+  font-size: 18px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-title-collapsed {
+  font-size: 18px;
+  margin: 0;
+}
+
+.toggle-btn {
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.sidebar-menu {
+  flex: 1;
+  border-right: none;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.top-nav {
+  height: 60px;
+  background-color: #fff;
+  border-bottom: 1px solid #e6e6e6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.user-info span {
+  margin-left: 8px;
+}
+
+.view-container {
+  flex: 1;
+  overflow: auto;
+  background-color: #f0f2f5;
+}
+
+/* 响应式处理 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 64px;
+  }
+  
+  .app-title {
+    display: none;
+  }
+  
+  .app-title-collapsed {
+    display: block;
+  }
 }
 </style>

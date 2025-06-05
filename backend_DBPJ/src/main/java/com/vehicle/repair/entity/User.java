@@ -30,6 +30,10 @@ public class User {
 
     private String address;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.USER; // 默认为普通用户
+
     @CreationTimestamp
     private LocalDateTime registrationDate;
 } 

@@ -5,6 +5,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -34,6 +35,11 @@ public class RepairOrder {
     private LocalDateTime estimatedCompletionDate;
 
     private LocalDateTime completionDate;
+    
+    @Enumerated(EnumType.STRING)
+    private UrgencyLevel urgencyLevel = UrgencyLevel.MEDIUM;
+    
+    private LocalDate expectedServiceDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

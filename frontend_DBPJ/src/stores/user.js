@@ -3,12 +3,12 @@ import { ref } from 'vue'
 import userApi from '@/api/user'
 
 export const useUserStore = defineStore('user', () => {
-  const currentUser = ref(null)
+  const user = ref(null)
   const token = ref(localStorage.getItem('token') || '')
 
   // 设置用户信息
-  const setUser = (user) => {
-    currentUser.value = user
+  const setUser = (userData) => {
+    user.value = userData
   }
 
   // 设置token
@@ -24,9 +24,8 @@ export const useUserStore = defineStore('user', () => {
   // 登录
   const login = async (loginData) => {
     try {
-      // 这里需要根据后端实际的登录接口调整
       const response = await userApi.login(loginData)
-      if (response.token) {
+      if (response && response.token) {
         setToken(response.token)
         setUser(response.user)
         return true
@@ -60,10 +59,13 @@ export const useUserStore = defineStore('user', () => {
     if (!token.value) return null
     
     try {
-      // 这里需要根据后端实际的获取当前用户接口调整
-      const user = await userApi.getCurrentUser()
-      setUser(user)
-      return user
+      // 如果已经有用户信息，直接返回
+      if (user.value) return user.value
+      
+      // 否则从API获取用户信息
+      const userData = await userApi.getUserById(user.value?.userId)
+      setUser(userData)
+      return userData
     } catch (error) {
       console.error('获取用户信息失败:', error)
       logout()
@@ -72,7 +74,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   return {
-    currentUser,
+    user,
     token,
     setUser,
     setToken,

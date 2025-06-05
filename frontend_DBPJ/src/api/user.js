@@ -24,6 +24,11 @@ export const userApi = {
   // 删除用户
   deleteUser(userId) {
     return http.delete(`/users/${userId}`)
+  },
+
+  // 登录
+  login(loginData) {
+    return http.post('/auth/login', loginData)
   }
 }
 

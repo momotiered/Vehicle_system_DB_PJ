@@ -6,6 +6,11 @@ export const repairOrderApi = {
     return http.post('/repair-orders', orderData)
   },
 
+  // 用户提交维修申请
+  createUserRepairRequest(requestData) {
+    return http.post('/repair-orders/user-request', requestData)
+  },
+
   // 根据ID获取维修工单
   getRepairOrderById(orderId) {
     return http.get(`/repair-orders/${orderId}`)
