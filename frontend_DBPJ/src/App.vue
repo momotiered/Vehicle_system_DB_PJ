@@ -29,6 +29,7 @@ const currentUser = computed(() => userStore.user)
 const isLoggedIn = computed(() => !!userStore.token)
 const isAdmin = computed(() => currentUser.value?.role === 'ADMIN')
 const isTechnician = computed(() => currentUser.value?.role === 'TECHNICIAN')
+const isUser = computed(() => currentUser.value?.role === 'USER')
 
 // 菜单折叠状态
 const isCollapse = ref(false)
@@ -117,40 +118,74 @@ const handleLogout = () => {
             :collapse-transition="false"
             router
           >
-            <el-menu-item index="/dashboard">
-              <el-icon><Document /></el-icon>
-              <template #title>仪表板</template>
-            </el-menu-item>
+            <!-- 管理员菜单 -->
+            <template v-if="isAdmin">
+              <el-menu-item index="/dashboard">
+                <el-icon><Document /></el-icon>
+                <template #title>管理仪表板</template>
+              </el-menu-item>
 
-            <el-menu-item index="/user-center">
-              <el-icon><User /></el-icon>
-              <template #title>用户中心</template>
-            </el-menu-item>
-            
-            <el-menu-item index="/vehicles" v-if="isAdmin">
-              <el-icon><Van /></el-icon>
-              <template #title>车辆管理</template>
-            </el-menu-item>
-            
-            <el-menu-item index="/repair-orders">
-              <el-icon><Tools /></el-icon>
-              <template #title>维修工单</template>
-            </el-menu-item>
-            
-            <el-menu-item index="/technician/dashboard" v-if="isTechnician">
-              <el-icon><Setting /></el-icon>
-              <template #title>技术人员工作台</template>
-            </el-menu-item>
-            
-            <el-menu-item index="/materials" v-if="isAdmin">
-              <el-icon><Box /></el-icon>
-              <template #title>维修材料管理</template>
-            </el-menu-item>
-            
-            <el-menu-item index="/users" v-if="isAdmin">
-              <el-icon><User /></el-icon>
-              <template #title>用户管理</template>
-            </el-menu-item>
+              <el-menu-item index="/users">
+                <el-icon><User /></el-icon>
+                <template #title>用户管理</template>
+              </el-menu-item>
+              
+              <el-menu-item index="/vehicles">
+                <el-icon><Van /></el-icon>
+                <template #title>车辆管理</template>
+              </el-menu-item>
+              
+              <el-menu-item index="/repair-orders">
+                <el-icon><Tools /></el-icon>
+                <template #title>维修工单管理</template>
+              </el-menu-item>
+              
+              <el-menu-item index="/materials">
+                <el-icon><Box /></el-icon>
+                <template #title>维修材料管理</template>
+              </el-menu-item>
+            </template>
+
+            <!-- 技术人员菜单 -->
+            <template v-else-if="isTechnician">
+              <el-menu-item index="/technician/dashboard">
+                <el-icon><Setting /></el-icon>
+                <template #title>技术人员工作台</template>
+              </el-menu-item>
+              
+              <el-menu-item index="/repair-orders">
+                <el-icon><Tools /></el-icon>
+                <template #title>我的维修工单</template>
+              </el-menu-item>
+              
+              <el-menu-item index="/materials">
+                <el-icon><Box /></el-icon>
+                <template #title>材料使用记录</template>
+              </el-menu-item>
+            </template>
+
+            <!-- 客户菜单 -->
+            <template v-else-if="isUser">
+              <el-menu-item index="/user-center">
+                <el-icon><User /></el-icon>
+                <template #title>个人中心</template>
+              </el-menu-item>
+              
+              <el-menu-item index="/vehicles">
+                <el-icon><Van /></el-icon>
+                <template #title>我的车辆</template>
+              </el-menu-item>
+              
+              <el-menu-item index="/repair-orders">
+                <el-icon><Tools /></el-icon>
+                <template #title>我的维修工单</template>
+              </el-menu-item>
+              
+              <el-menu-item index="/repair-orders/user/create">
+                <el-icon><CircleCheck /></el-icon>
+                <template #title>申请维修</template>
+              </el-menu-item>
+            </template>
           </el-menu>
         </el-aside>
 

@@ -16,6 +16,18 @@
         label-width="80px"
         @submit.prevent="handleLogin"
       >
+        <el-form-item label="身份" prop="loginType">
+          <el-select
+            v-model="loginForm.loginType"
+            placeholder="请选择登录身份"
+            style="width: 100%"
+          >
+            <el-option label="客户" value="USER" />
+            <el-option label="维修人员" value="TECHNICIAN" />
+            <el-option label="管理员" value="ADMIN" />
+          </el-select>
+        </el-form-item>
+
         <el-form-item label="用户名" prop="username">
           <el-input
             v-model="loginForm.username"
@@ -73,11 +85,15 @@ const loginFormRef = ref()
 const loading = ref(false)
 
 const loginForm = reactive({
+  loginType: 'USER', // 默认为客户身份
   username: '',
   password: ''
 })
 
 const loginRules = {
+  loginType: [
+    { required: true, message: '请选择登录身份', trigger: 'change' }
+  ],
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
@@ -101,14 +117,29 @@ const handleLogin = async () => {
     
     const success = await userStore.login({
       username: loginForm.username,
-      password: loginForm.password
+      password: loginForm.password,
+      expectedRole: loginForm.loginType
     })
 
     if (success) {
       ElMessage.success('登录成功')
-      router.push('/dashboard')
+      
+      // 根据用户角色跳转到不同的页面
+      const userRole = userStore.user?.role
+      switch (userRole) {
+        case 'TECHNICIAN':
+          router.push('/technician/dashboard')
+          break
+        case 'ADMIN':
+          router.push('/dashboard')
+          break
+        case 'USER':
+        default:
+          router.push('/user-center')
+          break
+      }
     } else {
-      ElMessage.error('登录失败，请检查用户名和密码')
+      ElMessage.error('登录失败，请检查用户名、密码和身份选择')
     }
   } catch (error) {
     console.error('登录错误:', error)
@@ -120,12 +151,27 @@ const handleLogin = async () => {
       
       if (error.response.status === 404) {
         errorMessage = '登录接口不存在，请联系管理员'
+      } else if (error.response.status === 403) {
+        // 身份验证失败的情况，显示详细的错误信息
+        errorMessage = error.response.data?.message || '身份验证失败，请检查您选择的登录身份是否正确'
       } else if (error.response.data?.message) {
         errorMessage = error.response.data.message
       }
+    } else if (error.message) {
+      errorMessage = error.message
     }
     
-    ElMessage.error(errorMessage)
+    // 使用更显眼的错误提示方式
+    if (error.response?.status === 403) {
+      ElMessage({
+        message: errorMessage,
+        type: 'warning',
+        duration: 6000, // 显示6秒，让用户有足够时间阅读
+        showClose: true
+      })
+    } else {
+      ElMessage.error(errorMessage)
+    }
   } finally {
     loading.value = false
   }

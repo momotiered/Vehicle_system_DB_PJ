@@ -6,9 +6,25 @@ export const useUserStore = defineStore('user', () => {
   const user = ref(null)
   const token = ref(localStorage.getItem('token') || '')
 
+  // 初始化时从localStorage恢复用户信息
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    try {
+      user.value = JSON.parse(storedUser)
+    } catch (error) {
+      console.error('Failed to parse stored user data:', error)
+      localStorage.removeItem('user')
+    }
+  }
+
   // 设置用户信息
   const setUser = (userData) => {
     user.value = userData
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData))
+    } else {
+      localStorage.removeItem('user')
+    }
   }
 
   // 设置token
@@ -28,12 +44,19 @@ export const useUserStore = defineStore('user', () => {
       if (response && response.token) {
         setToken(response.token)
         setUser(response.user)
+        
+        // 验证用户角色是否与预期匹配
+        if (loginData.expectedRole && response.user.role !== loginData.expectedRole) {
+          logout()
+          throw new Error('身份验证失败：您选择的登录身份与账户实际身份不符')
+        }
+        
         return true
       }
       return false
     } catch (error) {
       console.error('登录失败:', error)
-      return false
+      throw error
     }
   }
 
@@ -73,6 +96,26 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  // 检查用户权限
+  const hasRole = (requiredRole) => {
+    return user.value?.role === requiredRole
+  }
+
+  // 检查是否为管理员
+  const isAdmin = () => {
+    return user.value?.role === 'ADMIN'
+  }
+
+  // 检查是否为技术人员
+  const isTechnician = () => {
+    return user.value?.role === 'TECHNICIAN'
+  }
+
+  // 检查是否为普通用户
+  const isUser = () => {
+    return user.value?.role === 'USER'
+  }
+
   return {
     user,
     token,
@@ -81,6 +124,10 @@ export const useUserStore = defineStore('user', () => {
     login,
     register,
     logout,
-    getCurrentUser
+    getCurrentUser,
+    hasRole,
+    isAdmin,
+    isTechnician,
+    isUser
   }
 }) 

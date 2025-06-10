@@ -16,6 +16,17 @@
         label-width="80px"
         @submit.prevent="handleRegister"
       >
+        <el-form-item label="注册身份" prop="role">
+          <el-select
+            v-model="registerForm.role"
+            placeholder="请选择注册身份"
+            style="width: 100%"
+          >
+            <el-option label="客户" value="USER" />
+            <!-- 技术人员和管理员账户应由管理员创建 -->
+          </el-select>
+        </el-form-item>
+
         <el-form-item label="用户名" prop="username">
           <el-input
             v-model="registerForm.username"
@@ -119,6 +130,7 @@ const registerFormRef = ref()
 const loading = ref(false)
 
 const registerForm = reactive({
+  role: 'USER', // 默认为客户身份
   username: '',
   password: '',
   confirmPassword: '',
@@ -166,6 +178,9 @@ const validateEmail = (rule, value, callback) => {
 }
 
 const registerRules = {
+  role: [
+    { required: true, message: '请选择注册身份', trigger: 'change' }
+  ],
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
@@ -204,7 +219,8 @@ const handleRegister = async () => {
       fullName: registerForm.fullName,
       contactPhone: registerForm.contactPhone || null,
       contactEmail: registerForm.contactEmail || null,
-      address: registerForm.address || null
+      address: registerForm.address || null,
+      role: registerForm.role
     }
 
     const success = await userStore.register(userData)

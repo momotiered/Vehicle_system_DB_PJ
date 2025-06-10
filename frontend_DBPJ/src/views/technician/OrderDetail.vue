@@ -226,7 +226,7 @@
 import { ref, computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { getRepairOrderById, updateRepairOrderStatus } from '@/api/repairOrder';
+import repairOrderApi from '@/api/repairOrder';
 import { 
   getUsagesByOrderId, 
   getTotalMaterialCost,
@@ -323,7 +323,7 @@ export default {
     const loadOrderInfo = async () => {
       loadingOrder.value = true;
       try {
-        const response = await getRepairOrderById(orderId.value);
+        const response = await repairOrderApi.getRepairOrderById(orderId.value);
         orderInfo.value = response.data;
         loadStatusLogs();
       } catch (error) {
@@ -510,7 +510,7 @@ export default {
       }
       
       try {
-        await updateRepairOrderStatus(orderId.value, statusForm.newStatus, statusForm.note);
+        await repairOrderApi.updateRepairOrderStatus(orderId.value, statusForm.newStatus, statusForm.note);
         statusDialogVisible.value = false;
         ElMessage.success('工单状态已更新');
         loadOrderInfo();
