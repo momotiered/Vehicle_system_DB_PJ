@@ -26,6 +26,11 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
+    public Optional<Vehicle> findByLicensePlate(String licensePlate) {
+        return vehicleRepository.findByLicensePlate(licensePlate);
+    }
+
+    @Override
     public List<Vehicle> getAllVehicles() {
         return vehicleRepository.findAll();
     }

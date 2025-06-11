@@ -11,6 +11,8 @@ public interface VehicleService {
     
     Optional<Vehicle> getVehicleById(Integer vehicleId);
     
+    Optional<Vehicle> findByLicensePlate(String licensePlate);
+    
     List<Vehicle> getAllVehicles();
     
     List<Vehicle> getVehiclesByUserId(Integer userId);

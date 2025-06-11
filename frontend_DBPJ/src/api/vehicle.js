@@ -5,7 +5,7 @@ const vehicleApi = {
   getAllVehicles(params = {}) {
     return request({
       method: 'GET',
-      url: '/api/vehicles',
+      url: '/vehicles',
       params
     })
   },
@@ -14,7 +14,7 @@ const vehicleApi = {
   getVehicleById(id) {
     return request({
       method: 'GET',
-      url: `/api/vehicles/${id}`
+      url: `/vehicles/${id}`
     })
   },
 
@@ -22,7 +22,7 @@ const vehicleApi = {
   createVehicle(data) {
     return request({
       method: 'POST',
-      url: '/api/vehicles',
+      url: '/vehicles',
       data
     })
   },
@@ -31,7 +31,7 @@ const vehicleApi = {
   updateVehicle(id, data) {
     return request({
       method: 'PUT',
-      url: `/api/vehicles/${id}`,
+      url: `/vehicles/${id}`,
       data
     })
   },
@@ -40,7 +40,7 @@ const vehicleApi = {
   deleteVehicle(id) {
     return request({
       method: 'DELETE',
-      url: `/api/vehicles/${id}`
+      url: `/vehicles/${id}`
     })
   },
 
@@ -48,7 +48,7 @@ const vehicleApi = {
   getVehiclesByUserId(userId) {
     return request({
       method: 'GET',
-      url: `/api/vehicles/user/${userId}`
+      url: `/vehicles/user/${userId}`
     })
   }
 }
