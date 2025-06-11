@@ -134,9 +134,9 @@
         </el-form-item>
         <el-form-item label="调整类型:">
           <el-radio-group v-model="stockForm.adjustType">
-            <el-radio label="set">设置库存</el-radio>
-            <el-radio label="increase">增加库存</el-radio>
-            <el-radio label="decrease">减少库存</el-radio>
+            <el-radio value="set">设置库存</el-radio>
+            <el-radio value="increase">增加库存</el-radio>
+            <el-radio value="decrease">减少库存</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="数量:">

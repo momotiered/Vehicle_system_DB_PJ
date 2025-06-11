@@ -59,9 +59,9 @@
         <!-- 紧急程度 -->
         <el-form-item label="紧急程度" prop="urgencyLevel">
           <el-radio-group v-model="repairForm.urgencyLevel">
-            <el-radio label="LOW">一般</el-radio>
-            <el-radio label="MEDIUM">紧急</el-radio>
-            <el-radio label="HIGH">非常紧急</el-radio>
+            <el-radio value="LOW">一般</el-radio>
+            <el-radio value="MEDIUM">紧急</el-radio>
+            <el-radio value="HIGH">非常紧急</el-radio>
           </el-radio-group>
         </el-form-item>
 
@@ -184,10 +184,13 @@ const handleSubmit = async () => {
       userId: userId,
       descriptionOfIssue: repairForm.descriptionOfIssue,
       urgencyLevel: repairForm.urgencyLevel,
-      expectedServiceDate: repairForm.expectedServiceDate,
+      expectedServiceDate: repairForm.expectedServiceDate ? 
+        new Date(repairForm.expectedServiceDate).toISOString().split('T')[0] : null,
       notes: repairForm.notes || null,
       status: 'PENDING_ASSIGNMENT' // 默认状态为待分配
     }
+    
+    console.log('提交的数据:', repairOrderData) // 添加调试日志
     
     // 调用API创建维修工单
     await repairOrderApi.createUserRepairRequest(repairOrderData)
@@ -196,7 +199,16 @@ const handleSubmit = async () => {
     router.push('/user-center')
   } catch (error) {
     console.error('提交维修申请失败:', error)
-    ElMessage.error('提交维修申请失败，请稍后重试')
+    // 显示更详细的错误信息
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else if (error.response?.status === 400) {
+      ElMessage.error('请求数据格式错误，请检查输入')
+    } else if (error.response?.status === 403) {
+      ElMessage.error('权限不足或车辆不属于当前用户')
+    } else {
+      ElMessage.error('提交维修申请失败，请稍后重试')
+    }
   } finally {
     loading.value = false
   }

@@ -3,6 +3,7 @@ package com.vehicle.repair.controller;
 import com.vehicle.repair.dto.RepairOrderRequestDTO;
 import com.vehicle.repair.entity.RepairOrder;
 import com.vehicle.repair.entity.RepairOrderStatus;
+import com.vehicle.repair.entity.UrgencyLevel;
 import com.vehicle.repair.entity.User;
 import com.vehicle.repair.entity.Vehicle;
 import com.vehicle.repair.service.RepairOrderService;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -41,30 +43,90 @@ public class RepairOrderController {
     }
     
     @PostMapping("/user-request")
-    public ResponseEntity<RepairOrder> createUserRepairRequest(@RequestBody RepairOrderRequestDTO requestDTO) {
-        // 验证用户和车辆
-        User user = userService.getUserById(requestDTO.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "无效的用户ID"));
-        
-        Vehicle vehicle = vehicleService.getVehicleById(requestDTO.getVehicleId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "无效的车辆ID"));
-        
-        // 验证车辆是否属于该用户
-        if (!vehicle.getUser().getUserId().equals(user.getUserId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "该车辆不属于当前用户");
+    public ResponseEntity<RepairOrder> createUserRepairRequest(@RequestBody Map<String, Object> requestData) {
+        try {
+            // 从前端数据中提取必要信息
+            Integer vehicleId = (Integer) requestData.get("vehicleId");
+            Integer userId = (Integer) requestData.get("userId");
+            String descriptionOfIssue = (String) requestData.get("descriptionOfIssue");
+            String urgencyLevelStr = (String) requestData.get("urgencyLevel");
+            String statusStr = (String) requestData.get("status");
+            String notes = (String) requestData.get("notes");
+            String expectedServiceDateStr = (String) requestData.get("expectedServiceDate");
+
+            // 验证必要字段
+            if (vehicleId == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "车辆ID不能为空");
+            }
+            if (userId == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户ID不能为空");
+            }
+            if (descriptionOfIssue == null || descriptionOfIssue.trim().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "问题描述不能为空");
+            }
+
+            // 验证用户和车辆
+            User user = userService.getUserById(userId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "无效的用户ID"));
+            
+            Vehicle vehicle = vehicleService.getVehicleById(vehicleId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "无效的车辆ID"));
+            
+            // 验证车辆是否属于该用户
+            if (!vehicle.getUser().getUserId().equals(user.getUserId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "该车辆不属于当前用户");
+            }
+            
+            // 创建维修工单
+            RepairOrder repairOrder = new RepairOrder();
+            repairOrder.setUser(user);
+            repairOrder.setVehicle(vehicle);
+            repairOrder.setDescriptionOfIssue(descriptionOfIssue);
+            
+            // 处理紧急程度枚举
+            if (urgencyLevelStr != null) {
+                try {
+                    repairOrder.setUrgencyLevel(UrgencyLevel.valueOf(urgencyLevelStr));
+                } catch (IllegalArgumentException e) {
+                    repairOrder.setUrgencyLevel(UrgencyLevel.MEDIUM);
+                }
+            } else {
+                repairOrder.setUrgencyLevel(UrgencyLevel.MEDIUM);
+            }
+            
+            // 处理状态枚举
+            if (statusStr != null) {
+                try {
+                    repairOrder.setStatus(RepairOrderStatus.valueOf(statusStr));
+                } catch (IllegalArgumentException e) {
+                    repairOrder.setStatus(RepairOrderStatus.PENDING_ASSIGNMENT);
+                }
+            } else {
+                repairOrder.setStatus(RepairOrderStatus.PENDING_ASSIGNMENT);
+            }
+            
+            // 处理期望服务日期
+            if (expectedServiceDateStr != null && !expectedServiceDateStr.trim().isEmpty()) {
+                try {
+                    LocalDate expectedServiceDate = LocalDate.parse(expectedServiceDateStr);
+                    repairOrder.setExpectedServiceDate(expectedServiceDate);
+                } catch (Exception e) {
+                    // 如果日期格式不正确，设置为空
+                    repairOrder.setExpectedServiceDate(null);
+                }
+            }
+            
+            repairOrder.setNotes(notes);
+            repairOrder.setReportDate(LocalDateTime.now());
+            
+            RepairOrder savedOrder = repairOrderService.createRepairOrder(repairOrder);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedOrder);
+            
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "创建维修申请时发生错误: " + e.getMessage());
         }
-        
-        // 创建维修工单
-        RepairOrder repairOrder = new RepairOrder();
-        repairOrder.setUser(user);
-        repairOrder.setVehicle(vehicle);
-        repairOrder.setDescriptionOfIssue(requestDTO.getDescriptionOfIssue());
-        repairOrder.setUrgencyLevel(requestDTO.getUrgencyLevel());
-        repairOrder.setExpectedServiceDate(requestDTO.getExpectedServiceDate());
-        repairOrder.setStatus(requestDTO.getStatus());
-        repairOrder.setNotes(requestDTO.getNotes());
-        
-        return ResponseEntity.ok(repairOrderService.createRepairOrder(repairOrder));
     }
 
     @GetMapping("/{orderId}")
