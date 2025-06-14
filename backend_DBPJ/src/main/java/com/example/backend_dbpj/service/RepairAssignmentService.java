@@ -4,16 +4,18 @@ import com.example.backend_dbpj.dto.RepairAssignmentDto;
 import com.example.backend_dbpj.entity.RepairAssignment;
 import com.example.backend_dbpj.entity.RepairOrder;
 import com.example.backend_dbpj.entity.RepairPersonnel;
+import com.example.backend_dbpj.entity.PayrollRecord;
 import com.example.backend_dbpj.entity.enums.AssignmentStatus;
 import com.example.backend_dbpj.entity.enums.OrderStatus;
 import com.example.backend_dbpj.repository.RepairAssignmentRepository;
 import com.example.backend_dbpj.repository.RepairOrderRepository;
+import com.example.backend_dbpj.repository.PayrollRecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.sql.Date;
 import java.util.List;
 
 @Service
@@ -24,6 +26,9 @@ public class RepairAssignmentService {
 
     @Autowired
     private RepairOrderRepository repairOrderRepository;
+
+    @Autowired
+    private PayrollRecordRepository payrollRecordRepository;
 
     @Transactional
     public RepairAssignmentDto updateAssignmentStatus(int assignmentId, AssignmentStatus newStatus) {
@@ -36,7 +41,7 @@ public class RepairAssignmentService {
 
         if (newStatus == AssignmentStatus.Accepted) {
             order.setStatus(OrderStatus.IN_PROGRESS);
-            order.setStartDate(new Date());
+            order.setStartDate(new java.util.Date());
             // 初始化费用字段，防止NullPointerException
             if (order.getTotalLaborCost() == null) {
                 order.setTotalLaborCost(BigDecimal.ZERO);
@@ -47,6 +52,9 @@ public class RepairAssignmentService {
         } else if (newStatus == AssignmentStatus.Rejected) {
             order.setStatus(OrderStatus.PENDING_ASSIGNMENT);
         } else if (newStatus == AssignmentStatus.Work_Completed) {
+            // 创建薪资记录
+            createPayrollRecord(assignment);
+            
             // 检查该订单下的所有任务是否都已完成
             List<RepairAssignment> allAssignmentsForOrder = repairAssignmentRepository.findByRepairOrderOrderId(order.getOrderId());
             boolean allCompleted = allAssignmentsForOrder.stream()
@@ -54,7 +62,7 @@ public class RepairAssignmentService {
 
             if (allCompleted) {
                 order.setStatus(OrderStatus.COMPLETED);
-                order.setCompletionDate(new Date());
+                order.setCompletionDate(new java.util.Date());
             }
         }
 
@@ -99,5 +107,33 @@ public class RepairAssignmentService {
         RepairAssignment updatedAssignment = repairAssignmentRepository.save(assignment);
 
         return new RepairAssignmentDto(updatedAssignment);
+    }
+    
+    /**
+     * 为完成的任务创建薪资记录
+     */
+    private void createPayrollRecord(RepairAssignment assignment) {
+        RepairPersonnel personnel = assignment.getRepairPersonnel();
+        BigDecimal hoursWorked = assignment.getHoursWorked() != null ? assignment.getHoursWorked() : BigDecimal.ZERO;
+        BigDecimal amountPaid = assignment.getLaborCostForPersonnel() != null ? assignment.getLaborCostForPersonnel() : BigDecimal.ZERO;
+        
+        // 只有当工时大于0时才创建薪资记录
+        if (hoursWorked.compareTo(BigDecimal.ZERO) > 0) {
+            PayrollRecord payrollRecord = new PayrollRecord();
+            payrollRecord.setRepairPersonnel(personnel);
+            
+            // 设置当前日期为支付日期和期间结束日期
+            long currentTime = System.currentTimeMillis();
+            Date currentDate = new Date(currentTime);
+            
+            payrollRecord.setPaymentDate(currentDate);
+            payrollRecord.setPeriodStartDate(currentDate); // 简化处理，使用当前日期
+            payrollRecord.setPeriodEndDate(currentDate);
+            payrollRecord.setTotalHoursWorked(hoursWorked);
+            payrollRecord.setTotalAmountPaid(amountPaid);
+            payrollRecord.setNotes("工单 #" + assignment.getRepairOrder().getOrderId() + " 完成薪资");
+            
+            payrollRecordRepository.save(payrollRecord);
+        }
     }
 } 

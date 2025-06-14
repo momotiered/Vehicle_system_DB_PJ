@@ -1,6 +1,6 @@
 <template>
   <div class="assignments-container">
-    <el-tabs v-model="activeTab" @tab-click="handleTabClick" class="custom-tabs">
+    <el-tabs v-model="activeTab" class="custom-tabs">
       <el-tab-pane label="新任务" name="Assigned"></el-tab-pane>
       <el-tab-pane label="进行中" name="Accepted"></el-tab-pane>
       <el-tab-pane label="已完成" name="Work_Completed"></el-tab-pane>
@@ -53,7 +53,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { getAssignments, updateAssignmentStatus } from '@/api/repairPersonnel.js';
@@ -82,6 +82,13 @@ onMounted(() => {
   }
 });
 
+// 监听activeTab变化，自动获取数据
+watch(activeTab, () => {
+  if (userInfo.value) {
+    fetchAssignments();
+  }
+});
+
 const fetchAssignments = async () => {
   if (!userInfo.value || !userInfo.value.personnelId) {
     ElMessage.error('无法获取维修人员ID，请重新登录。');
@@ -99,16 +106,12 @@ const fetchAssignments = async () => {
   }
 };
 
-const handleTabClick = () => {
-  fetchAssignments();
-};
-
 const handleAccept = async (assignmentId) => {
   try {
     await updateAssignmentStatus(assignmentId, 'Accepted');
     ElMessage.success('已接受工段，已自动跳转到"进行中"');
     activeTab.value = 'Accepted';
-    fetchAssignments(); // 切换tab后刷新列表
+    // watch会自动触发fetchAssignments()
   } catch (error) {
     ElMessage.error(error.message);
   }
@@ -123,7 +126,8 @@ const handleReject = async (assignmentId) => {
   try {
     await updateAssignmentStatus(assignmentId, 'Rejected');
     ElMessage.info('已拒绝工单');
-    fetchAssignments(); // 刷新列表
+    // 当前标签页没有变化，但需要刷新数据以移除已拒绝的工单
+    fetchAssignments();
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error(error.message);
