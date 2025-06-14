@@ -68,6 +68,13 @@ onMounted(() => {
   const storedUser = sessionStorage.getItem('user');
   if (storedUser) {
     userInfo.value = JSON.parse(storedUser);
+
+    // 检查路由参数，以确定初始显示的tab
+    const initialTab = router.currentRoute.value.query.tab;
+    if (initialTab && ['Assigned', 'Accepted', 'Work_Completed'].includes(initialTab)) {
+        activeTab.value = initialTab;
+    }
+
     fetchAssignments();
   } else {
     ElMessage.error('请先登录');
@@ -99,8 +106,9 @@ const handleTabClick = () => {
 const handleAccept = async (assignmentId) => {
   try {
     await updateAssignmentStatus(assignmentId, 'Accepted');
-    ElMessage.success('已接受工单');
-    fetchAssignments(); // 刷新列表
+    ElMessage.success('已接受工段，已自动跳转到"进行中"');
+    activeTab.value = 'Accepted';
+    fetchAssignments(); // 切换tab后刷新列表
   } catch (error) {
     ElMessage.error(error.message);
   }

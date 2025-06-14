@@ -1,5 +1,6 @@
 package com.example.backend_dbpj.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -24,6 +25,7 @@ public class Material {
     private BigDecimal unitPrice;
 
     @OneToMany(mappedBy = "material")
+    @JsonIgnore
     private List<OrderMaterialUsed> orderMaterialsUsed;
 
 

@@ -1,6 +1,7 @@
 package com.example.backend_dbpj.entity;
 
 import com.example.backend_dbpj.entity.enums.AssignmentStatus;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -16,6 +17,7 @@ public class RepairAssignment {
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
+    @JsonBackReference("repairOrder-assignments")
     private RepairOrder repairOrder;
 
     @ManyToOne
@@ -40,6 +42,10 @@ public class RepairAssignment {
     // Getters and Setters
 
     public int getAssignmentId() {
+        return assignmentId;
+    }
+
+    public int getId() {
         return assignmentId;
     }
 

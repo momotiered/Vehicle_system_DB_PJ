@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface RepairAssignmentRepository extends JpaRepository<RepairAssignment, Integer> {
     List<RepairAssignment> findByRepairPersonnel_PersonnelIdAndStatus(int personnelId, AssignmentStatus status);
+    List<RepairAssignment> findByRepairOrderOrderId(int orderId);
 }

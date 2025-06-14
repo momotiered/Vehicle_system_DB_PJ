@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class RepairAssignmentService {
@@ -33,11 +34,28 @@ public class RepairAssignmentService {
 
         RepairOrder order = assignment.getRepairOrder();
 
-        if (newStatus == AssignmentStatus.ACCEPTED) {
+        if (newStatus == AssignmentStatus.Accepted) {
             order.setStatus(OrderStatus.IN_PROGRESS);
             order.setStartDate(new Date());
-        } else if (newStatus == AssignmentStatus.REJECTED) {
+            // 初始化费用字段，防止NullPointerException
+            if (order.getTotalLaborCost() == null) {
+                order.setTotalLaborCost(BigDecimal.ZERO);
+            }
+            if (order.getGrandTotalCost() == null) {
+                order.setGrandTotalCost(BigDecimal.ZERO);
+            }
+        } else if (newStatus == AssignmentStatus.Rejected) {
             order.setStatus(OrderStatus.PENDING_ASSIGNMENT);
+        } else if (newStatus == AssignmentStatus.Work_Completed) {
+            // 检查该订单下的所有任务是否都已完成
+            List<RepairAssignment> allAssignmentsForOrder = repairAssignmentRepository.findByRepairOrderOrderId(order.getOrderId());
+            boolean allCompleted = allAssignmentsForOrder.stream()
+                    .allMatch(a -> a.getStatus() == AssignmentStatus.Work_Completed);
+
+            if (allCompleted) {
+                order.setStatus(OrderStatus.COMPLETED);
+                order.setCompletionDate(new Date());
+            }
         }
 
         repairOrderRepository.save(order);
@@ -64,6 +82,15 @@ public class RepairAssignmentService {
 
         // 3. 联动更新工单的总费用
         RepairOrder order = assignment.getRepairOrder();
+        
+        // 确保费用字段不为null
+        if (order.getTotalLaborCost() == null) {
+            order.setTotalLaborCost(BigDecimal.ZERO);
+        }
+        if (order.getGrandTotalCost() == null) {
+            order.setGrandTotalCost(BigDecimal.ZERO);
+        }
+        
         order.setTotalLaborCost(order.getTotalLaborCost().add(costForThisLog));
         order.setGrandTotalCost(order.getGrandTotalCost().add(costForThisLog));
 

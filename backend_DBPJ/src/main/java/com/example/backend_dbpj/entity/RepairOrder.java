@@ -59,11 +59,11 @@ public class RepairOrder {
     private String notes;
 
     @OneToMany(mappedBy = "repairOrder")
-    @JsonBackReference("repairOrder-assignments")
+    @JsonManagedReference("repairOrder-assignments")
     private List<RepairAssignment> repairAssignments;
 
     @OneToMany(mappedBy = "repairOrder")
-    @JsonBackReference("repairOrder-materials")
+    @JsonManagedReference("repairOrder-materials")
     private List<OrderMaterialUsed> orderMaterialsUsed;
 
     @OneToMany(mappedBy = "repairOrder")

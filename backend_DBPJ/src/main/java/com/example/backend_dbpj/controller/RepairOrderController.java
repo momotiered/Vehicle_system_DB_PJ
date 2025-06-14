@@ -8,11 +8,7 @@ import com.example.backend_dbpj.dto.OrderMaterialUsedDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityNotFoundException;
 import java.util.Map;
@@ -23,6 +19,16 @@ public class RepairOrderController {
 
     @Autowired
     private RepairOrderService repairOrderService;
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<?> getOrderById(@PathVariable int orderId) {
+        try {
+            RepairOrder repairOrder = repairOrderService.getOrderById(orderId);
+            return ResponseEntity.ok(repairOrder);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 
     @PostMapping
     public ResponseEntity<?> createRepairOrder(@RequestBody CreateRepairOrderRequest request) {

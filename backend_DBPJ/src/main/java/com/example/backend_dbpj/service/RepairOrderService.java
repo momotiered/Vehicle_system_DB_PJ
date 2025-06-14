@@ -52,6 +52,7 @@ public class RepairOrderService {
         return repairOrderRepository.findByUser_UserId(userId);
     }
 
+    @Transactional
     public RepairOrder createRepairOrder(CreateRepairOrderRequest request) {
         // 1. 验证用户和车辆是否存在
         User user = userRepository.findById(request.getUserId())
@@ -121,6 +122,15 @@ public class RepairOrderService {
 
         // 5. 更新工单总费用
         BigDecimal materialCost = material.getUnitPrice().multiply(BigDecimal.valueOf(quantityToUse));
+        
+        // 确保费用字段不为null
+        if (order.getTotalMaterialCost() == null) {
+            order.setTotalMaterialCost(BigDecimal.ZERO);
+        }
+        if (order.getGrandTotalCost() == null) {
+            order.setGrandTotalCost(BigDecimal.ZERO);
+        }
+        
         order.setTotalMaterialCost(order.getTotalMaterialCost().add(materialCost));
         order.setGrandTotalCost(order.getGrandTotalCost().add(materialCost));
         repairOrderRepository.save(order);
@@ -129,9 +139,9 @@ public class RepairOrderService {
         return new OrderMaterialUsedDto(newUsage);
     }
 
-    public RepairOrder getRepairOrderById(int orderId) {
+    public RepairOrder getOrderById(int orderId) {
         return repairOrderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("工单不存在，ID: " + orderId));
+                .orElseThrow(() -> new EntityNotFoundException("工单不存在，ID: " + orderId));
     }
 
     public List<RepairOrderDto> getPendingOrders() {

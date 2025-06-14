@@ -1,5 +1,7 @@
 package com.example.backend_dbpj.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import javax.persistence.*;
 import java.math.BigDecimal;
 
@@ -13,6 +15,7 @@ public class OrderMaterialUsed {
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
+    @JsonBackReference("repairOrder-materials")
     private RepairOrder repairOrder;
 
     @ManyToOne
