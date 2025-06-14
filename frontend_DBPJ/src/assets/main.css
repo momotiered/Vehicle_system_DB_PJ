@@ -1,103 +1,35 @@
 @import './base.css';
 
-/* 基础重置 */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html, 
-body {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  color: #333;
-  overflow-x: hidden;
-}
-
 #app {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
 }
 
-/* 清除浮动 */
-.clearfix:after {
-  content: "";
-  display: table;
-  clear: both;
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
 }
 
-/* 通用容器样式 */
-.container {
-  width: 100%;
-  padding-right: 15px;
-  padding-left: 15px;
-  margin-right: auto;
-  margin-left: auto;
-  max-width: 1200px;
-}
-
-/* 页面容器样式 */
-.page-container {
-  padding: 20px;
-  height: 100%;
-}
-
-/* 调整Element Plus卡片样式 */
-.el-card {
-  overflow: visible !important;
-}
-
-.el-card__body {
-  padding: 20px;
-}
-
-/* 确保所有图标对齐 */
-.el-icon {
-  vertical-align: middle;
-}
-
-/* 调整Element Plus表单元素的样式 */
-.el-input__wrapper,
-.el-textarea__wrapper {
-  padding: 0 12px !important;
-}
-
-/* 主题颜色变量 */
-:root {
-  --primary-color: #409eff;
-  --success-color: #67c23a;
-  --warning-color: #e6a23c;
-  --danger-color: #f56c6c;
-  --info-color: #909399;
-  
-  --bg-color: #f5f7fa;
-  --text-color: #303133;
-  --text-color-secondary: #606266;
-  --text-color-placeholder: #909399;
-  --border-color: #dcdfe6;
-  --border-color-light: #e4e7ed;
-}
-
-/* 移动端响应式设计 */
-@media (max-width: 768px) {
-  html {
-    font-size: 14px;
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
   }
-  
-  .container {
-    padding-right: 10px;
-    padding-left: 10px;
+}
+
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    place-items: center;
   }
-  
-  .page-container {
-    padding: 10px;
+
+  #app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0 2rem;
   }
 }

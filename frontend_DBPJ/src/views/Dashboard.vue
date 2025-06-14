@@ -1,306 +1,413 @@
 <template>
-  <div class="dashboard">
-    <el-page-header>
-      <template #content>
-        <span class="text-large font-600 mr-3">仪表板</span>
-      </template>
-    </el-page-header>
+  <div class="dashboard-container">
+    <div class="header">
+      <h2>欢迎, {{ user.fullName }}!</h2>
+      <button @click="logout" class="logout-button">退出登录</button>
+    </div>
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon user-icon">
-              <el-icon size="30"><User /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ stats.totalUsers }}</div>
-              <div class="stat-label">用户总数</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
+    <div class="tabs">
+      <button :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">个人信息</button>
+      <button :class="{ active: activeTab === 'vehicles' }" @click="fetchVehicles">我的车辆</button>
+      <button :class="{ active: activeTab === 'orders' }" @click="fetchRepairOrders">维修记录</button>
+    </div>
 
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon vehicle-icon">
-              <el-icon size="30"><Van /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ stats.totalVehicles }}</div>
-              <div class="stat-label">车辆总数</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
+    <div class="tab-content">
+      <!-- 个人信息 -->
+      <div v-if="activeTab === 'info'" class="user-info">
+        <p><strong>用户名:</strong> {{ user.username }}</p>
+        <p><strong>邮箱:</strong> {{ user.contactEmail }}</p>
+        <p><strong>电话:</strong> {{ user.contactPhone }}</p>
+        <p><strong>地址:</strong> {{ user.address }}</p>
+        <p><strong>注册日期:</strong> {{ new Date(user.registrationDate).toLocaleDateString() }}</p>
+        <p><strong>角色:</strong> {{ user.role }}</p>
+      </div>
 
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon order-icon">
-              <el-icon size="30"><Tools /></el-icon>
+      <!-- 我的车辆 -->
+      <div v-if="activeTab === 'vehicles'">
+        <div v-if="vehicles.length === 0">暂无车辆信息。</div>
+        <ul v-else class="item-list">
+          <li v-for="vehicle in vehicles" :key="vehicle.vehicleId">
+            <div class="item-info">
+              <p><strong>车牌号:</strong> {{ vehicle.licensePlate }}</p>
+              <p><strong>品牌:</strong> {{ vehicle.make }}</p>
+              <p><strong>型号:</strong> {{ vehicle.model }}</p>
+              <p><strong>年份:</strong> {{ vehicle.yearOfManufacture }}</p>
             </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ stats.totalRepairOrders }}</div>
-              <div class="stat-label">维修工单</div>
+            <div class="item-actions">
+              <button @click="showRepairModal(vehicle.vehicleId)">报修</button>
             </div>
-          </div>
-        </el-card>
-      </el-col>
+          </li>
+        </ul>
+      </div>
 
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon pending-icon">
-              <el-icon size="30"><Clock /></el-icon>
+      <!-- 维修记录 -->
+      <div v-if="activeTab === 'orders'">
+        <div v-if="repairOrders.length === 0">暂无维修记录。</div>
+        <ul v-else class="item-list">
+          <li v-for="order in repairOrders" :key="order.orderId">
+            <div class="item-info">
+              <p><strong>问题描述:</strong> {{ order.descriptionOfIssue }}</p>
+              <p><strong>状态:</strong> {{ formatStatus(order.status) }}</p>
+              <p><strong>创建日期:</strong> {{ new Date(order.reportDate).toLocaleDateString() }}</p>
             </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ stats.pendingOrders }}</div>
-              <div class="stat-label">待处理工单</div>
+            <div class="item-actions">
+              <button v-if="['PENDING_ASSIGNMENT', 'ASSIGNED', 'IN_PROGRESS'].includes(order.status)" @click="urgeOrder(order.orderId)" class="urge-button">催单</button>
+              <button v-if="order.status === 'COMPLETED'" @click="showFeedbackModal(order.orderId)">评价</button>
             </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </li>
+        </ul>
+      </div>
+    </div>
 
-    <!-- 快捷操作 -->
-    <el-card class="quick-actions-card">
-      <template #header>
-        <span>快捷操作</span>
-      </template>
-      <el-row :gutter="20">
-        <el-col :span="8">
-          <el-button 
-            type="primary" 
-            size="large" 
-            style="width: 100%"
-            @click="$router.push('/users/create')"
-          >
-            <el-icon><UserFilled /></el-icon>
-            添加用户
-          </el-button>
-        </el-col>
-        <el-col :span="8">
-          <el-button 
-            type="success" 
-            size="large" 
-            style="width: 100%"
-            @click="$router.push('/vehicles/create')"
-          >
-            <el-icon><Van /></el-icon>
-            添加车辆
-          </el-button>
-        </el-col>
-        <el-col :span="8">
-          <el-button 
-            type="warning" 
-            size="large" 
-            style="width: 100%"
-            @click="$router.push('/repair-orders/create')"
-          >
-            <el-icon><Tools /></el-icon>
-            创建工单
-          </el-button>
-        </el-col>
-      </el-row>
-    </el-card>
+    <!-- 报修模态框 -->
+    <div v-if="isRepairModalVisible" class="modal">
+      <div class="modal-content">
+        <span class="close" @click="isRepairModalVisible = false">&times;</span>
+        <h3>提交报修</h3>
+        <textarea v-model="repairDescription" placeholder="请描述您车辆遇到的问题..."></textarea>
+        <button @click="submitRepair">提交</button>
+      </div>
+    </div>
 
-    <!-- 最近活动 -->
-    <el-row :gutter="20">
-      <el-col :span="12">
-        <el-card class="recent-card">
-          <template #header>
-            <span>最近的维修工单</span>
-            <el-link type="primary" style="float: right" @click="$router.push('/repair-orders')">
-              查看全部
-            </el-link>
-          </template>
-          <el-table :data="recentOrders" style="width: 100%" stripe>
-            <el-table-column prop="orderId" label="工单ID" width="80" />
-            <el-table-column prop="descriptionOfIssue" label="问题描述" show-overflow-tooltip />
-            <el-table-column prop="status" label="状态" width="120">
-              <template #default="scope">
-                <el-tag :type="getStatusType(scope.row.status)">
-                  {{ getStatusText(scope.row.status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-col>
-
-      <el-col :span="12">
-        <el-card class="recent-card">
-          <template #header>
-            <span>系统信息</span>
-          </template>
-          <div class="system-info">
-            <el-descriptions :column="1" border>
-              <el-descriptions-item label="系统版本">v1.0.0</el-descriptions-item>
-              <el-descriptions-item label="数据库状态">
-                <el-tag type="success">正常</el-tag>
-              </el-descriptions-item>
-              <el-descriptions-item label="最后更新">{{ new Date().toLocaleString() }}</el-descriptions-item>
-              <el-descriptions-item label="在线用户">{{ stats.onlineUsers }}</el-descriptions-item>
-            </el-descriptions>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- 反馈模态框 -->
+    <div v-if="isFeedbackModalVisible" class="modal">
+      <div class="modal-content">
+        <span class="close" @click="isFeedbackModalVisible = false">&times;</span>
+        <h3>服务评价</h3>
+        <input type="number" v-model.number="feedbackRating" min="1" max="5" placeholder="评分 (1-5)">
+        <textarea v-model="feedbackComment" placeholder="请留下您的宝贵意见..."></textarea>
+        <button @click="submitFeedback">提交</button>
+      </div>
+    </div>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
-import { User, Van, Tools, Clock, UserFilled } from '@element-plus/icons-vue'
-import userApi from '@/api/user'
-import repairOrderApi from '@/api/repairOrder'
-
-const stats = ref({
-  totalUsers: 0,
-  totalVehicles: 0,
-  totalRepairOrders: 0,
-  pendingOrders: 0,
-  onlineUsers: 1
-})
-
-const recentOrders = ref([])
-
-const getStatusType = (status) => {
-  const typeMap = {
-    'PENDING_ASSIGNMENT': 'warning',
-    'ASSIGNED': 'info',
-    'IN_PROGRESS': 'primary',
-    'AWAITING_PARTS': 'warning',
-    'COMPLETED': 'success',
-    'CANCELLED_BY_USER': 'danger',
-    'CANNOT_REPAIR': 'danger',
-    'PENDING_USER_CONFIRMATION': 'warning'
+<script>
+export default {
+  data() {
+    return {
+      user: null,
+      activeTab: 'info', // 默认显示个人信息
+      vehicles: [],
+      repairOrders: [],
+      isRepairModalVisible: false,
+      isFeedbackModalVisible: false,
+      selectedVehicleId: null,
+      selectedOrderId: null,
+      repairDescription: '',
+      feedbackRating: 5,
+      feedbackComment: ''
+    };
+  },
+  created() {
+    const userData = sessionStorage.getItem('user');
+    if (userData) {
+      this.user = JSON.parse(userData);
+    } else {
+      this.$router.push('/login');
+    }
+  },
+  methods: {
+    logout() {
+      sessionStorage.removeItem('user');
+      alert('您已成功退出！');
+      this.$router.push('/login');
+    },
+    formatStatus(status) {
+      const statusMap = {
+        'PENDING_ASSIGNMENT': '待处理',
+        'ASSIGNED': '已分配',
+        'IN_PROGRESS': '处理中',
+        'AWAITING_PARTS': '等待配件',
+        'COMPLETED': '已完成',
+        'CANCELLED_BY_USER': '用户已取消',
+        'CANNOT_REPAIR': '无法维修',
+        'PENDING_USER_CONFIRMATION': '等待用户确认'
+      };
+      return statusMap[status] || status;
+    },
+    async fetchVehicles() {
+      this.activeTab = 'vehicles';
+      if (!this.user) return;
+      try {
+        const response = await fetch(`/api/users/${this.user.userId}/vehicles`);
+        if (response.ok) {
+          this.vehicles = await response.json();
+        } else {
+          console.error('获取车辆信息失败');
+        }
+      } catch (error) {
+        console.error('请求车辆信息出错:', error);
+      }
+    },
+    async fetchRepairOrders() {
+      this.activeTab = 'orders';
+      if (!this.user) return;
+      try {
+        const response = await fetch(`/api/users/${this.user.userId}/repair-orders`);
+        if (response.ok) {
+          this.repairOrders = await response.json();
+        } else {
+          console.error('获取维修记录失败');
+        }
+      } catch (error) {
+        console.error('请求维修记录出错:', error);
+      }
+    },
+    showRepairModal(vehicleId) {
+      this.selectedVehicleId = vehicleId;
+      this.isRepairModalVisible = true;
+    },
+    async submitRepair() {
+      if (!this.repairDescription) {
+        alert('请填写问题描述！');
+        return;
+      }
+      try {
+        const response = await fetch('/api/repair-orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: this.user.userId,
+            vehicleId: this.selectedVehicleId,
+            descriptionOfIssue: this.repairDescription,
+          }),
+        });
+        if (response.status === 201) {
+          alert('报修提交成功！');
+          this.isRepairModalVisible = false;
+          this.repairDescription = '';
+          this.fetchRepairOrders(); // 刷新维修列表
+        } else {
+          alert('提交失败：' + await response.text());
+        }
+      } catch (error) {
+        alert('请求失败：' + error);
+      }
+    },
+    async urgeOrder(orderId) {
+      try {
+        const response = await fetch(`/api/repair-orders/${orderId}/urge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          alert('已成功催单！我们将尽快为您处理。');
+        } else {
+          alert('催单失败：' + await response.text());
+        }
+      } catch (error) {
+        alert('请求失败：' + error);
+      }
+    },
+    showFeedbackModal(orderId) {
+      this.selectedOrderId = orderId;
+      this.isFeedbackModalVisible = true;
+    },
+    async submitFeedback() {
+        if (!this.feedbackRating) {
+            alert('请提供评分！');
+            return;
+        }
+        try {
+            const response = await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: this.user.userId,
+                    orderId: this.selectedOrderId,
+                    ratingScore: this.feedbackRating,
+                    comments: this.feedbackComment,
+                }),
+            });
+            if (response.status === 201) {
+                alert('感谢您的反馈！');
+                this.isFeedbackModalVisible = false;
+                this.feedbackRating = 5;
+                this.feedbackComment = '';
+            } else {
+                alert('提交失败：' + await response.text());
+            }
+        } catch (error) {
+            alert('请求失败：' + error);
+        }
+    }
   }
-  return typeMap[status] || 'info'
-}
-
-const getStatusText = (status) => {
-  const textMap = {
-    'PENDING_ASSIGNMENT': '待分配',
-    'ASSIGNED': '已分配',
-    'IN_PROGRESS': '进行中',
-    'AWAITING_PARTS': '等待配件',
-    'COMPLETED': '已完成',
-    'CANCELLED_BY_USER': '用户取消',
-    'CANNOT_REPAIR': '无法维修',
-    'PENDING_USER_CONFIRMATION': '待用户确认'
-  }
-  return textMap[status] || status
-}
-
-const loadDashboardData = async () => {
-  try {
-    // 加载用户统计
-    const users = await userApi.getAllUsers()
-    stats.value.totalUsers = users.length || 0
-
-    // 模拟其他数据
-    stats.value.totalVehicles = 25
-    stats.value.totalRepairOrders = 48
-    stats.value.pendingOrders = 12
-
-    // 模拟最近工单数据
-    recentOrders.value = [
-      { orderId: 1001, descriptionOfIssue: '发动机异响', status: 'IN_PROGRESS' },
-      { orderId: 1002, descriptionOfIssue: '刹车片更换', status: 'PENDING_ASSIGNMENT' },
-      { orderId: 1003, descriptionOfIssue: '空调维修', status: 'COMPLETED' },
-      { orderId: 1004, descriptionOfIssue: '轮胎更换', status: 'AWAITING_PARTS' },
-      { orderId: 1005, descriptionOfIssue: '变速箱维修', status: 'ASSIGNED' }
-    ]
-  } catch (error) {
-    console.error('加载仪表板数据失败:', error)
-  }
-}
-
-onMounted(() => {
-  loadDashboardData()
-})
+};
 </script>
 
 <style scoped>
-.dashboard {
+.dashboard-container {
+  max-width: 800px;
+  margin: 20px auto;
   padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
-
-.stats-row {
-  margin: 20px 0;
-}
-
-.stat-card {
-  transition: transform 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-}
-
-.stat-content {
+.header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
 }
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
+.header h2 {
+  color: #333;
+  font-weight: 600;
+}
+.logout-button {
+  padding: 8px 15px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.logout-button:hover {
+  background-color: #c82333;
+}
+.tabs {
+  margin-top: 20px;
+}
+.tabs button {
+  padding: 10px 15px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background-color: #f0f0f0;
+  margin-right: 5px;
+  border-radius: 5px 5px 0 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.tabs button:not(.active):hover {
+  background-color: #e2e6ea;
+}
+.tabs button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+.tab-content {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 0 5px 5px 5px;
+}
+.user-info p {
+  margin: 15px 0;
+  font-size: 16px;
+  color: #333;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+.user-info p:last-child {
+  border-bottom: none;
+}
+.user-info strong {
+  color: #007bff;
+  margin-right: 10px;
+}
+.item-list {
+  list-style: none;
+  padding: 0;
+}
+.item-list li {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.item-list li:last-child {
+  border-bottom: none;
+}
+.item-info p {
+  margin: 4px 0;
+  font-size: 15px;
+  color: #333;
+}
+.item-info p strong {
+  font-weight: 600;
+  color: #007bff;
+  margin-right: 8px;
+  display: inline-block;
+  width: 90px;
+}
+.item-actions button {
+  background-color: #28a745;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: background-color 0.2s ease;
+}
+.item-actions button:hover {
+  background-color: #218838;
+}
+.item-actions button:first-child {
+  margin-left: 0;
+}
+.item-actions .urge-button {
+    background-color: #ffc107;
+}
+.item-actions .urge-button:hover {
+    background-color: #e0a800;
+}
+.modal {
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20px;
-  color: white;
 }
-
-.user-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.modal-content {
+  background-color: #fefefe;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 500px;
+  border-radius: 5px;
+  position: relative;
 }
-
-.vehicle-icon {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.order-icon {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.pending-icon {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.stat-info {
-  flex: 1;
-}
-
-.stat-number {
+.close {
+  color: #aaa;
+  position: absolute;
+  right: 15px;
+  top: 10px;
   font-size: 28px;
   font-weight: bold;
-  color: #303133;
-  margin-bottom: 5px;
+  cursor: pointer;
 }
-
-.stat-label {
-  font-size: 14px;
-  color: #909399;
+.modal-content textarea, .modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
-
-.quick-actions-card {
-  margin: 20px 0;
+.modal-content button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s ease;
 }
-
-.recent-card {
-  margin-top: 20px;
-  min-height: 300px;
-}
-
-.system-info {
-  padding: 10px 0;
+.modal-content button:hover {
+    background-color: #0056b3;
 }
 </style> 

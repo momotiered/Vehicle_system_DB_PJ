@@ -9,10 +9,10 @@
         <relativePath/>
     </parent>
     
-    <groupId>com.vehicle</groupId>
-    <artifactId>repair</artifactId>
+    <groupId>com.example</groupId>
+    <artifactId>backend_dbpj</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>vehicle-repair-system</name>
+    <name>backend_dbpj</name>
     <description>Vehicle Repair Management System</description>
     
     <properties>
@@ -88,7 +88,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.vehicle.repair.VehicleRepairApplication</mainClass>
+                    <mainClass>com.example.backend_dbpj.BackendDbpjApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

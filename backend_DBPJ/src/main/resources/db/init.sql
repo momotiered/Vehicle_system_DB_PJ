@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS Vehicles (
     license_plate VARCHAR(50) NOT NULL UNIQUE COMMENT '车牌号',
     make VARCHAR(100) COMMENT '品牌 (如: Toyota)',
     model VARCHAR(100) COMMENT '型号 (如: Camry)',
-    year_of_manufacture YEAR COMMENT '制造年份',
+    year_of_manufacture INT COMMENT '制造年份',
     vin VARCHAR(100) UNIQUE COMMENT '车辆识别码 (VIN)',
     color VARCHAR(50) COMMENT '颜色',
     registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '车辆信息录入日期',

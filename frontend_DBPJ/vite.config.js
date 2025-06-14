@@ -1,39 +1,29 @@
 import { fileURLToPath, URL } from 'node:url'
-import { resolve } from 'path'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
     vueDevTools(),
-    AutoImport({
-      resolvers: [ElementPlusResolver()],
-    }),
-    Components({
-      resolvers: [ElementPlusResolver()],
-    }),
   ],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
   server: {
-    port: 3000,
-    host: '0.0.0.0',
     proxy: {
+      // 代理所有 /api 的请求
       '/api': {
-        target: 'http://localhost:9080',
+        target: 'http://localhost:9080', // 您的后端服务地址
         changeOrigin: true,
-        secure: false,
-      },
-    },
-  },
+        // 如果需要，可以重写路径
+        // rewrite: (path) => path.replace(/^\/api/, '') 
+      }
+    }
+  }
 })
