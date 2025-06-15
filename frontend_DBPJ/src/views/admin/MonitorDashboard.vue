@@ -24,6 +24,10 @@
           <div class="stat-label">待分配</div>
         </div>
         <div class="stat-item">
+          <div class="stat-number">{{ overviewStats.assignedOrders || 0 }}</div>
+          <div class="stat-label">已分配</div>
+        </div>
+        <div class="stat-item">
           <div class="stat-number">{{ overviewStats.inProgressOrders || 0 }}</div>
           <div class="stat-label">进行中</div>
         </div>

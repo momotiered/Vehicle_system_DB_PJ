@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityNotFoundException;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,6 +28,17 @@ public class RepairOrderController {
             return ResponseEntity.ok(repairOrder);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAllOrders() {
+        try {
+            List<RepairOrder> orders = repairOrderService.getAllOrders();
+            return ResponseEntity.ok(orders);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "获取工单列表失败: " + e.getMessage()));
         }
     }
 
@@ -56,6 +68,18 @@ public class RepairOrderController {
             @RequestBody AddMaterialUsageRequestDto requestDto) {
         try {
             OrderMaterialUsedDto result = repairOrderService.addMaterialToOrder(orderId, requestDto);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{orderId}/assign")
+    public ResponseEntity<?> assignRepairOrder(
+            @PathVariable int orderId,
+            @RequestBody List<Integer> personnelIds) {
+        try {
+            RepairOrder result = repairOrderService.assignRepairOrder(orderId, personnelIds);
             return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));

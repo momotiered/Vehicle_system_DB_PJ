@@ -14,4 +14,6 @@ public interface RepairPersonnelRepository extends JpaRepository<RepairPersonnel
     
     // 监控查询方法
     Long countByIsActive(boolean isActive);
+
+    List<RepairPersonnel> findByIsActiveTrue();
 } 

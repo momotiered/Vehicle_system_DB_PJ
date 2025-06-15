@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Comparator;
 
 @Service
 public class RepairOrderService {
@@ -56,31 +57,59 @@ public class RepairOrderService {
         return repairOrderRepository.findByUser_UserId(userId);
     }
 
+    public List<RepairOrder> getAllOrders() {
+        return repairOrderRepository.findAll();
+    }
+
     @Transactional
     public RepairOrder createRepairOrder(CreateRepairOrderRequest request) {
-        // 1. 验证用户和车辆是否存在
+        // 1. 验证用户和车辆
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + request.getUserId()));
-
+                .orElseThrow(() -> new RuntimeException("用户不存在，ID: " + request.getUserId()));
         Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
-                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found with id: " + request.getVehicleId()));
+                .orElseThrow(() -> new RuntimeException("车辆不存在，ID: " + request.getVehicleId()));
 
-        // 2. 创建新的RepairOrder实例
-        RepairOrder repairOrder = new RepairOrder();
-        repairOrder.setUser(user);
-        repairOrder.setVehicle(vehicle);
-        repairOrder.setDescriptionOfIssue(request.getDescriptionOfIssue());
+        // 2. 创建工单
+        RepairOrder order = new RepairOrder();
+        order.setUser(user);
+        order.setVehicle(vehicle);
+        order.setDescriptionOfIssue(request.getDescriptionOfIssue());
+        order.setStatus(OrderStatus.PENDING_ASSIGNMENT);
+        order.setReportDate(new Timestamp(System.currentTimeMillis()));
+        
+        // 3. 保存工单
+        return repairOrderRepository.save(order);
+    }
 
-        // 3. 设置初始状态和报修日期
-        repairOrder.setStatus(OrderStatus.PENDING_ASSIGNMENT);
-        repairOrder.setReportDate(new Timestamp(System.currentTimeMillis()));
+    @Transactional
+    public RepairOrder assignRepairOrder(Integer orderId, List<Integer> personnelIds) {
+        // 1. 验证工单
+        RepairOrder order = repairOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("工单不存在，ID: " + orderId));
+        
+        if (order.getStatus() != OrderStatus.PENDING_ASSIGNMENT) {
+            throw new RuntimeException("工单状态不允许分配，当前状态: " + order.getStatus());
+        }
+        
+        // 2. 验证并创建分配记录
+        for (Integer personnelId : personnelIds) {
+            RepairPersonnel personnel = repairPersonnelRepository.findById(personnelId)
+                    .orElseThrow(() -> new RuntimeException("维修人员不存在，ID: " + personnelId));
 
-        // 4. 初始化费用
-        repairOrder.setTotalMaterialCost(BigDecimal.ZERO);
-        repairOrder.setTotalLaborCost(BigDecimal.ZERO);
-        repairOrder.setGrandTotalCost(BigDecimal.ZERO);
+            RepairAssignment assignment = new RepairAssignment();
+            assignment.setRepairOrder(order);
+            assignment.setRepairPersonnel(personnel);
+            assignment.setStatus(AssignmentStatus.Assigned);
+            assignment.setAssignmentDate(new Timestamp(System.currentTimeMillis()));
 
-        return repairOrderRepository.save(repairOrder);
+            repairAssignmentRepository.save(assignment);
+        }
+
+        // 3. 更新工单状态
+        order.setStatus(OrderStatus.ASSIGNED);
+        repairOrderRepository.save(order);
+        
+        return order;
     }
 
     public void urgeRepairOrder(Integer orderId) {
@@ -89,8 +118,10 @@ public class RepairOrderService {
                 .orElseThrow(() -> new EntityNotFoundException("RepairOrder not found with id: " + orderId));
 
         // 2. 检查工单状态是否允许催单
-        if (repairOrder.getStatus() != OrderStatus.IN_PROGRESS && repairOrder.getStatus() != OrderStatus.ASSIGNED) {
-            throw new IllegalStateException("Order status does not allow reminder.");
+        if (repairOrder.getStatus() != OrderStatus.PENDING_ASSIGNMENT && 
+            repairOrder.getStatus() != OrderStatus.IN_PROGRESS && 
+            repairOrder.getStatus() != OrderStatus.ASSIGNED) {
+            throw new IllegalStateException("当前工单状态不允许催单。");
         }
 
         System.out.println("用户对工单 #" + orderId + " 进行了催单。");
@@ -201,7 +232,7 @@ public class RepairOrderService {
         );
         
         // 各状态工单数量
-        Long pendingOrders = repairOrderRepository.countByStatus(OrderStatus.PENDING_ASSIGNMENT);
+        Long assignedOrders = repairOrderRepository.countByStatus(OrderStatus.ASSIGNED);
         Long inProgressOrders = repairOrderRepository.countByStatus(OrderStatus.IN_PROGRESS);
         Long completedOrders = repairOrderRepository.countByStatus(OrderStatus.COMPLETED);
         
@@ -212,7 +243,7 @@ public class RepairOrderService {
         Long activePersonnel = repairPersonnelRepository.countByIsActive(true);
         
         stats.put("todayOrders", todayOrders);
-        stats.put("pendingOrders", pendingOrders);
+        stats.put("assignedOrders", assignedOrders);
         stats.put("inProgressOrders", inProgressOrders);
         stats.put("completedOrders", completedOrders);
         stats.put("totalUsers", totalUsers);

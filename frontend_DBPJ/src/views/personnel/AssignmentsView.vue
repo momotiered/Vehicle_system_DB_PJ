@@ -109,7 +109,7 @@ const fetchAssignments = async () => {
 const handleAccept = async (assignmentId) => {
   try {
     await updateAssignmentStatus(assignmentId, 'Accepted');
-    ElMessage.success('已接受工段，已自动跳转到"进行中"');
+    ElMessage.success('已接受工单，已自动跳转到"进行中"');
     activeTab.value = 'Accepted';
     // watch会自动触发fetchAssignments()
   } catch (error) {

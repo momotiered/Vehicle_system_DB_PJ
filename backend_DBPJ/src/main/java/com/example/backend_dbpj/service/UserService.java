@@ -9,6 +9,7 @@ import com.example.backend_dbpj.entity.User;
 import com.example.backend_dbpj.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
 import javax.naming.AuthenticationException;
@@ -101,10 +102,17 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     public void deleteUser(int userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("User not found with id: " + userId);
-        }
-        userRepository.deleteById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+        
+        // 删除用户相关的所有记录
+        // 1. 删除用户的车辆记录（由于设置了CASCADE，会自动删除）
+        // 2. 删除用户的维修订单（由于设置了CASCADE，会自动删除）
+        // 3. 删除用户的反馈记录（由于设置了CASCADE，会自动删除）
+        
+        // 最后删除用户本身
+        userRepository.delete(user);
     }
 } 

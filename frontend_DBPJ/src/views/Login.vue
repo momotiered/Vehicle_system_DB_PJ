@@ -132,9 +132,9 @@ const handleLogin = async () => {
         } else if (loginForm.role === 'admin') {
           // 假设管理员登录成功后跳转到特定仪表盘
           // 注意：后端需要实现管理员登录接口
-          ElMessage.success('管理员登录成功（模拟）');
+          ElMessage.success('管理员登录成功');
           sessionStorage.setItem('user', JSON.stringify({ id: 0, role: 'admin', fullName: '管理员' })); // 模拟管理员信息
-          router.push('/admin/assignment');
+          router.push('/admin');
         }
       } catch (error) {
         console.error('登录请求失败:', error);

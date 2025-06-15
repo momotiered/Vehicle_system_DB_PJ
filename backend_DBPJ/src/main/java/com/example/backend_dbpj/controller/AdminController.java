@@ -10,15 +10,17 @@ import com.example.backend_dbpj.dto.UpdatePersonnelRequestDto;
 import com.example.backend_dbpj.entity.User;
 import com.example.backend_dbpj.entity.RepairPersonnel;
 import com.example.backend_dbpj.entity.Material;
+import com.example.backend_dbpj.entity.Vehicle;
 import com.example.backend_dbpj.service.RepairOrderService;
 import com.example.backend_dbpj.service.RepairPersonnelService;
 import com.example.backend_dbpj.service.UserService;
 import com.example.backend_dbpj.service.FeedbackService;
 import com.example.backend_dbpj.repository.MaterialRepository;
+import com.example.backend_dbpj.repository.VehicleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import javax.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -42,6 +44,9 @@ public class AdminController {
     
     @Autowired
     private MaterialRepository materialRepository;
+
+    @Autowired
+    private VehicleRepository vehicleRepository;
 
     @GetMapping("/orders/pending")
     public ResponseEntity<List<RepairOrderDto>> getPendingAssignmentOrders() {
@@ -113,9 +118,42 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "Personnel deleted successfully"));
     }
 
-    // 管理员相关接口将在这里定义
+    // --- Vehicle Management Endpoints ---
+    @GetMapping("/vehicles")
+    public ResponseEntity<List<Vehicle>> getAllVehicles() {
+        return ResponseEntity.ok(vehicleRepository.findAll());
+    }
 
-    // --- 监控面板接口 ---
+    @GetMapping("/vehicles/{id}")
+    public ResponseEntity<Vehicle> getVehicleById(@PathVariable int id) {
+        return ResponseEntity.ok(vehicleRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found with id: " + id)));
+    }
+
+    @PutMapping("/vehicles/{id}")
+    public ResponseEntity<Vehicle> updateVehicle(@PathVariable int id, @RequestBody Vehicle vehicle) {
+        Vehicle existingVehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle not found with id: " + id));
+        
+        existingVehicle.setLicensePlate(vehicle.getLicensePlate());
+        existingVehicle.setMake(vehicle.getMake());
+        existingVehicle.setModel(vehicle.getModel());
+        existingVehicle.setYearOfManufacture(vehicle.getYearOfManufacture());
+        existingVehicle.setColor(vehicle.getColor());
+        
+        return ResponseEntity.ok(vehicleRepository.save(existingVehicle));
+    }
+
+    @DeleteMapping("/vehicles/{id}")
+    public ResponseEntity<?> deleteVehicle(@PathVariable int id) {
+        if (!vehicleRepository.existsById(id)) {
+            throw new EntityNotFoundException("Vehicle not found with id: " + id);
+        }
+        vehicleRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Vehicle deleted successfully"));
+    }
+
+    // --- Monitor Dashboard Endpoints ---
     
     @GetMapping("/monitor/overview")
     public ResponseEntity<Map<String, Object>> getOverviewStats() {

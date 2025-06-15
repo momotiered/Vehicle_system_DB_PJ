@@ -7,14 +7,14 @@
       </div>
 
       <el-table :data="users" stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80"></el-table-column>
+        <el-table-column prop="userId" label="ID" width="80"></el-table-column>
         <el-table-column prop="username" label="用户名"></el-table-column>
         <el-table-column prop="contactPhone" label="联系电话"></el-table-column>
         <el-table-column prop="address" label="地址"></el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
             <el-button size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+            <el-button size="small" type="danger" @click="handleDelete(row.userId)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -95,7 +95,7 @@ const handleEdit = (user) => {
   dialogTitle.value = '编辑用户';
   isEditMode.value = true;
   form.value = { 
-      id: user.id, 
+      id: user.userId, 
       contactInfo: user.contactPhone,
       address: user.address
   };

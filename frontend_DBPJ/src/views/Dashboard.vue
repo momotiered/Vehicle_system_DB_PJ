@@ -46,13 +46,20 @@
         <ul v-else class="item-list">
           <li v-for="order in repairOrders" :key="order.orderId">
             <div class="item-info">
+              <p><strong>车牌号:</strong> {{ order.vehicle?.licensePlate || '未知' }}</p>
               <p><strong>问题描述:</strong> {{ order.descriptionOfIssue }}</p>
               <p><strong>状态:</strong> {{ formatStatus(order.status) }}</p>
               <p><strong>创建日期:</strong> {{ new Date(order.reportDate).toLocaleDateString() }}</p>
+              <template v-if="order.status === 'COMPLETED'">
+                <p><strong>材料费用:</strong> ¥{{ order.totalMaterialCost?.toFixed(2) || '0.00' }}</p>
+                <p><strong>工时费用:</strong> ¥{{ order.totalLaborCost?.toFixed(2) || '0.00' }}</p>
+                <p><strong>总费用:</strong> ¥{{ order.grandTotalCost?.toFixed(2) || '0.00' }}</p>
+              </template>
             </div>
             <div class="item-actions">
               <button v-if="['PENDING_ASSIGNMENT', 'ASSIGNED', 'IN_PROGRESS'].includes(order.status)" @click="urgeOrder(order.orderId)" class="urge-button">催单</button>
               <button v-if="order.status === 'COMPLETED'" @click="showFeedbackModal(order.orderId)">评价</button>
+              <button v-if="order.status === 'COMPLETED'" @click="showOrderDetails(order)" class="details-button">查看详情</button>
             </div>
           </li>
         </ul>
@@ -79,6 +86,50 @@
         <button @click="submitFeedback">提交</button>
       </div>
     </div>
+
+    <!-- 维修详情模态框 -->
+    <div v-if="isDetailsModalVisible" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>维修详情</h3>
+          <button class="close-button" @click="isDetailsModalVisible = false">关闭</button>
+        </div>
+        <div v-if="selectedOrder" class="order-details">
+          <div class="detail-section">
+            <h4>基本信息</h4>
+            <p><strong>车牌号:</strong> {{ selectedOrder.vehicle?.licensePlate || '未知' }}</p>
+            <p><strong>问题描述:</strong> {{ selectedOrder.descriptionOfIssue }}</p>
+            <p><strong>报修日期:</strong> {{ new Date(selectedOrder.reportDate).toLocaleString() }}</p>
+            <p><strong>完成日期:</strong> {{ new Date(selectedOrder.completionDate).toLocaleString() }}</p>
+          </div>
+          
+          <div class="detail-section">
+            <h4>费用明细</h4>
+            <p><strong>材料费用:</strong> ¥{{ selectedOrder.totalMaterialCost?.toFixed(2) || '0.00' }}</p>
+            <p><strong>工时费用:</strong> ¥{{ selectedOrder.totalLaborCost?.toFixed(2) || '0.00' }}</p>
+            <p><strong>总费用:</strong> ¥{{ selectedOrder.grandTotalCost?.toFixed(2) || '0.00' }}</p>
+          </div>
+
+          <div v-if="selectedOrder.orderMaterialsUsed && selectedOrder.orderMaterialsUsed.length > 0" class="detail-section">
+            <h4>使用材料</h4>
+            <ul class="materials-list">
+              <li v-for="material in selectedOrder.orderMaterialsUsed" :key="material.orderMaterialId">
+                {{ material.material?.materialName }} - 数量: {{ material.quantityUsed }} - 单价: ¥{{ material.pricePerUnitAtTimeOfUse?.toFixed(2) }} - 小计: ¥{{ material.totalCost?.toFixed(2) }}
+              </li>
+            </ul>
+          </div>
+
+          <div v-if="selectedOrder.repairAssignments && selectedOrder.repairAssignments.length > 0" class="detail-section">
+            <h4>维修人员</h4>
+            <ul class="personnel-list">
+              <li v-for="assignment in selectedOrder.repairAssignments" :key="assignment.assignmentId">
+                {{ assignment.repairPersonnel?.fullName }} - 工时: {{ assignment.hoursWorked }}小时 - 费用: ¥{{ assignment.laborCostForPersonnel?.toFixed(2) }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -92,8 +143,10 @@ export default {
       repairOrders: [],
       isRepairModalVisible: false,
       isFeedbackModalVisible: false,
+      isDetailsModalVisible: false,
       selectedVehicleId: null,
       selectedOrderId: null,
+      selectedOrder: null,
       repairDescription: '',
       feedbackRating: 5,
       feedbackComment: ''
@@ -231,6 +284,10 @@ export default {
         } catch (error) {
             alert('请求失败：' + error);
         }
+    },
+    showOrderDetails(order) {
+      this.selectedOrder = order;
+      this.isDetailsModalVisible = true;
     }
   }
 };
@@ -409,5 +466,79 @@ export default {
 }
 .modal-content button:hover {
     background-color: #0056b3;
+}
+.details-button {
+  background-color: #409EFF;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.details-button:hover {
+  background-color: #66b1ff;
+}
+
+.order-details {
+  text-align: left;
+  padding: 20px;
+}
+
+.detail-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+}
+
+.detail-section h4 {
+  margin-top: 0;
+  color: #303133;
+  border-bottom: 1px solid #dcdfe6;
+  padding-bottom: 10px;
+}
+
+.materials-list, .personnel-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.materials-list li, .personnel-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.materials-list li:last-child, .personnel-list li:last-child {
+  border-bottom: none;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid #dcdfe6;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #303133;
+}
+
+.close-button {
+  background-color: #f56c6c;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.close-button:hover {
+  background-color: #f78989;
 }
 </style> 

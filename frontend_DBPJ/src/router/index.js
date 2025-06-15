@@ -14,9 +14,11 @@ import PayrollView from '../views/personnel/PayrollView.vue';
 // 管理员视图
 import AdminLayout from '../views/admin/AdminLayout.vue';
 import MonitorDashboard from '../views/admin/MonitorDashboard.vue';
-import OrderAssignmentView from '../views/admin/OrderAssignmentView.vue';
-import UserManagement from '../views/admin/UserManagement.vue';
-import PersonnelManagement from '../views/admin/PersonnelManagement.vue';
+import UserManagement from '@/views/admin/UserManagement.vue';
+import PersonnelManagement from '@/views/admin/PersonnelManagement.vue';
+import VehicleManagement from '@/views/admin/VehicleManagement.vue';
+import OrderAssignmentView from '@/views/admin/OrderAssignmentView.vue';
+import OrderListView from '../views/admin/OrderListView.vue'
 
 const routes = [
   {
@@ -46,13 +48,13 @@ const routes = [
         path: 'dashboard',
         name: 'PersonnelDashboard',
         component: PersonnelDashboard
-  },
+      },
       {
         path: 'assignments',
         name: 'PersonnelAssignments',
         component: AssignmentsView
       },
-  {
+      {
         path: 'order/:orderId',
         name: 'PersonnelOrderDetail',
         component: OrderDetailView,
@@ -76,9 +78,14 @@ const routes = [
     component: AdminLayout,
     children: [
       {
-        path: 'monitor',
-        name: 'AdminMonitorDashboard',
+        path: '',
+        name: 'AdminMonitor',
         component: MonitorDashboard
+      },
+      {
+        path: 'orders',
+        name: 'AdminOrderList',
+        component: OrderListView
       },
       {
         path: 'assignment',
@@ -89,6 +96,11 @@ const routes = [
         path: 'users',
         name: 'AdminUserManagement',
         component: UserManagement
+      },
+      {
+        path: 'vehicles',
+        name: 'AdminVehicleManagement',
+        component: VehicleManagement
       },
       {
         path: 'personnel',

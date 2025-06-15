@@ -90,4 +90,21 @@ export const getPersonnelStats = () => {
 
 export const getSatisfactionStats = () => {
     return axios.get('/api/admin/monitor/satisfaction');
+};
+
+// --- Vehicle Management ---
+export const getAllVehicles = () => {
+    return axios.get('/api/admin/vehicles');
+};
+
+export const getVehicleById = (id) => {
+    return axios.get(`/api/admin/vehicles/${id}`);
+};
+
+export const updateVehicle = (id, vehicleData) => {
+    return axios.put(`/api/admin/vehicles/${id}`, vehicleData);
+};
+
+export const deleteVehicle = (id) => {
+    return axios.delete(`/api/admin/vehicles/${id}`);
 }; 

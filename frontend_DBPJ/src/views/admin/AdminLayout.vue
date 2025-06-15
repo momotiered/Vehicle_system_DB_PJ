@@ -9,9 +9,13 @@
         <div class="sidebar-header">
           <h3>管理员后台</h3>
         </div>
-        <el-menu-item index="/admin/monitor">
-          <i class="el-icon-data-analysis"></i>
+        <el-menu-item index="/admin">
+          <i class="el-icon-monitor"></i>
           <span>监控面板</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/orders">
+          <i class="el-icon-document"></i>
+          <span>工单列表</span>
         </el-menu-item>
         <el-menu-item index="/admin/assignment">
           <i class="el-icon-document-checked"></i>
@@ -20,6 +24,10 @@
         <el-menu-item index="/admin/users">
           <i class="el-icon-user"></i>
           <span>用户管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/vehicles">
+          <i class="el-icon-truck"></i>
+          <span>车辆管理</span>
         </el-menu-item>
         <el-menu-item index="/admin/personnel">
           <i class="el-icon-coordinate"></i>

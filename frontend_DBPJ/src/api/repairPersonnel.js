@@ -5,7 +5,7 @@ const BASE_URL = '/api'; // 或者你的后端API基础路径
 /**
  * 获取分配给维修人员的工单列表
  * @param {number} personnelId 维修人员ID
- * @param {string} status 工单分配状态 (ASSIGNED, ACCEPTED, WORK_COMPLETED, etc.)
+ * @param {string} status 工单分配状态 (Assigned, Accepted, Work_Completed, etc.)
  * @returns {Promise<any>}
  */
 export const getAssignments = (personnelId, status) => {
@@ -16,7 +16,7 @@ export const getAssignments = (personnelId, status) => {
 /**
  * 更新工单分配的状态 (接受/拒绝)
  * @param {number} assignmentId 工单分配ID
- * @param {string} status 新的状态 ('ACCEPTED' or 'REJECTED')
+ * @param {string} status 新的状态 ('Accepted' or 'Rejected')
  * @returns {Promise<any>}
  */
 export const updateAssignmentStatus = (assignmentId, status) => {
