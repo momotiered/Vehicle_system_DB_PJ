@@ -21,6 +21,8 @@ import javax.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class RepairPersonnelService {
@@ -115,5 +117,27 @@ public class RepairPersonnelService {
         }
         // 实际业务中可能不是物理删除，而是标记为 inactive
         repairPersonnelRepository.deleteById(personnelId);
+    }
+    
+    // --- 监控统计方法 ---
+    
+    public Map<String, Object> getPersonnelStats() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        // 各工种人员数量统计
+        List<RepairPersonnel> allPersonnel = repairPersonnelRepository.findByIsActive(true);
+        Map<String, Long> workTypeStats = allPersonnel.stream()
+            .collect(Collectors.groupingBy(
+                RepairPersonnel::getWorkType,
+                Collectors.counting()
+            ));
+        
+        // 总在职人员数
+        Long totalActivePersonnel = repairPersonnelRepository.countByIsActive(true);
+        
+        stats.put("totalActivePersonnel", totalActivePersonnel);
+        stats.put("workTypeDistribution", workTypeStats);
+        
+        return stats;
     }
 } 

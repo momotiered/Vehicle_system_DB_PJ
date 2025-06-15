@@ -64,4 +64,30 @@ export const updatePersonnel = (id, personnelData) => {
 
 export const deletePersonnel = (id) => {
     return axios.delete(`/api/admin/personnel/${id}`);
+};
+
+// --- 监控面板 API ---
+
+export const getOverviewStats = () => {
+    return axios.get('/api/admin/monitor/overview');
+};
+
+export const getOrderStatusStats = () => {
+    return axios.get('/api/admin/monitor/order-status');
+};
+
+export const getFinancialStats = () => {
+    return axios.get('/api/admin/monitor/financial');
+};
+
+export const getInventoryAlerts = () => {
+    return axios.get('/api/admin/monitor/inventory-alerts');
+};
+
+export const getPersonnelStats = () => {
+    return axios.get('/api/admin/monitor/personnel');
+};
+
+export const getSatisfactionStats = () => {
+    return axios.get('/api/admin/monitor/satisfaction');
 }; 

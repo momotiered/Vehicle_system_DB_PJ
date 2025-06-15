@@ -9,15 +9,20 @@ import com.example.backend_dbpj.dto.CreatePersonnelRequestDto;
 import com.example.backend_dbpj.dto.UpdatePersonnelRequestDto;
 import com.example.backend_dbpj.entity.User;
 import com.example.backend_dbpj.entity.RepairPersonnel;
+import com.example.backend_dbpj.entity.Material;
 import com.example.backend_dbpj.service.RepairOrderService;
 import com.example.backend_dbpj.service.RepairPersonnelService;
 import com.example.backend_dbpj.service.UserService;
+import com.example.backend_dbpj.service.FeedbackService;
+import com.example.backend_dbpj.repository.MaterialRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -31,6 +36,12 @@ public class AdminController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private FeedbackService feedbackService;
+    
+    @Autowired
+    private MaterialRepository materialRepository;
 
     @GetMapping("/orders/pending")
     public ResponseEntity<List<RepairOrderDto>> getPendingAssignmentOrders() {
@@ -103,5 +114,65 @@ public class AdminController {
     }
 
     // 管理员相关接口将在这里定义
+
+    // --- 监控面板接口 ---
+    
+    @GetMapping("/monitor/overview")
+    public ResponseEntity<Map<String, Object>> getOverviewStats() {
+        Map<String, Object> stats = repairOrderService.getOverviewStats();
+        return ResponseEntity.ok(stats);
+    }
+    
+    @GetMapping("/monitor/order-status")
+    public ResponseEntity<Map<String, Object>> getOrderStatusStats() {
+        Map<String, Object> stats = repairOrderService.getOrderStatusStats();
+        return ResponseEntity.ok(stats);
+    }
+    
+    @GetMapping("/monitor/financial")
+    public ResponseEntity<Map<String, Object>> getFinancialStats() {
+        Map<String, Object> stats = repairOrderService.getFinancialStats();
+        return ResponseEntity.ok(stats);
+    }
+    
+    @GetMapping("/monitor/inventory-alerts")
+    public ResponseEntity<List<Map<String, Object>>> getInventoryAlerts() {
+        List<Material> lowStockMaterials = materialRepository.findLowStockMaterials(20); // 安全库存阈值设为20
+        List<Map<String, Object>> alerts = lowStockMaterials.stream()
+            .map(material -> {
+                Map<String, Object> alert = new HashMap<>();
+                alert.put("materialId", material.getMaterialId());
+                alert.put("materialName", material.getMaterialName());
+                alert.put("stockQuantity", material.getStockQuantity());
+                alert.put("safeStock", 20);
+                
+                String alertLevel;
+                if (material.getStockQuantity() < 5) {
+                    alertLevel = "紧急";
+                } else if (material.getStockQuantity() < 10) {
+                    alertLevel = "警告";
+                } else {
+                    alertLevel = "注意";
+                }
+                alert.put("alertLevel", alertLevel);
+                
+                return alert;
+            })
+            .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(alerts);
+    }
+    
+    @GetMapping("/monitor/personnel")
+    public ResponseEntity<Map<String, Object>> getPersonnelStats() {
+        Map<String, Object> stats = repairPersonnelService.getPersonnelStats();
+        return ResponseEntity.ok(stats);
+    }
+    
+    @GetMapping("/monitor/satisfaction")
+    public ResponseEntity<Map<String, Object>> getSatisfactionStats() {
+        Map<String, Object> stats = feedbackService.getSatisfactionStats();
+        return ResponseEntity.ok(stats);
+    }
 
 } 

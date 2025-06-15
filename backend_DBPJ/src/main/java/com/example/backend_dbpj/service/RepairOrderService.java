@@ -23,6 +23,10 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 @Service
 public class RepairOrderService {
@@ -170,21 +174,107 @@ public class RepairOrderService {
             RepairPersonnel personnel = repairPersonnelRepository.findById(personnelId)
                     .orElseThrow(() -> new RuntimeException("维修人员不存在，ID: " + personnelId));
 
-            if (!personnel.isActive()) {
-                throw new RuntimeException("维修人员 " + personnel.getFullName() + " 已离职，无法分配");
-            }
-
             RepairAssignment assignment = new RepairAssignment();
             assignment.setRepairOrder(order);
             assignment.setRepairPersonnel(personnel);
-            assignment.setAssignmentDate(new Timestamp(System.currentTimeMillis()));
-            // 状态默认为 Assigned, 在实体类中已定义, 但需要显式设置
             assignment.setStatus(AssignmentStatus.Assigned);
+            assignment.setAssignmentDate(new Timestamp(System.currentTimeMillis()));
+
             repairAssignmentRepository.save(assignment);
         }
 
         // 3. 更新工单状态
         order.setStatus(OrderStatus.ASSIGNED);
         repairOrderRepository.save(order);
+    }
+
+    // --- 监控统计方法 ---
+    
+    public Map<String, Object> getOverviewStats() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        // 今日工单统计  
+        LocalDate today = LocalDate.now();
+        Long todayOrders = repairOrderRepository.countByReportDateBetween(
+            java.sql.Date.valueOf(today),
+            java.sql.Date.valueOf(today.plusDays(1))
+        );
+        
+        // 各状态工单数量
+        Long pendingOrders = repairOrderRepository.countByStatus(OrderStatus.PENDING_ASSIGNMENT);
+        Long inProgressOrders = repairOrderRepository.countByStatus(OrderStatus.IN_PROGRESS);
+        Long completedOrders = repairOrderRepository.countByStatus(OrderStatus.COMPLETED);
+        
+        // 总用户数
+        Long totalUsers = userRepository.count();
+        
+        // 在职人员数
+        Long activePersonnel = repairPersonnelRepository.countByIsActive(true);
+        
+        stats.put("todayOrders", todayOrders);
+        stats.put("pendingOrders", pendingOrders);
+        stats.put("inProgressOrders", inProgressOrders);
+        stats.put("completedOrders", completedOrders);
+        stats.put("totalUsers", totalUsers);
+        stats.put("activePersonnel", activePersonnel);
+        
+        return stats;
+    }
+    
+    public Map<String, Object> getOrderStatusStats() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        for (OrderStatus status : OrderStatus.values()) {
+            Long count = repairOrderRepository.countByStatus(status);
+            stats.put(status.name(), count);
+        }
+        
+        return stats;
+    }
+    
+    public Map<String, Object> getFinancialStats() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        // 本月完成的工单统计
+        LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate endOfMonth = startOfMonth.plusMonths(1);
+        
+        List<RepairOrder> completedOrders = repairOrderRepository.findCompletedOrdersInDateRange(
+            java.sql.Date.valueOf(startOfMonth),
+            java.sql.Date.valueOf(endOfMonth),
+            OrderStatus.COMPLETED
+        );
+        
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        BigDecimal materialRevenue = BigDecimal.ZERO;
+        BigDecimal laborRevenue = BigDecimal.ZERO;
+        BigDecimal maxOrderValue = BigDecimal.ZERO;
+        
+        for (RepairOrder order : completedOrders) {
+            if (order.getGrandTotalCost() != null) {
+                totalRevenue = totalRevenue.add(order.getGrandTotalCost());
+                if (order.getGrandTotalCost().compareTo(maxOrderValue) > 0) {
+                    maxOrderValue = order.getGrandTotalCost();
+                }
+            }
+            if (order.getTotalMaterialCost() != null) {
+                materialRevenue = materialRevenue.add(order.getTotalMaterialCost());
+            }
+            if (order.getTotalLaborCost() != null) {
+                laborRevenue = laborRevenue.add(order.getTotalLaborCost());
+            }
+        }
+        
+        BigDecimal avgOrderValue = completedOrders.isEmpty() ? BigDecimal.ZERO : 
+            totalRevenue.divide(BigDecimal.valueOf(completedOrders.size()), 2, BigDecimal.ROUND_HALF_UP);
+        
+        stats.put("totalRevenue", totalRevenue);
+        stats.put("materialRevenue", materialRevenue);
+        stats.put("laborRevenue", laborRevenue);
+        stats.put("avgOrderValue", avgOrderValue);
+        stats.put("maxOrderValue", maxOrderValue);
+        stats.put("completedOrdersCount", completedOrders.size());
+        
+        return stats;
     }
 } 

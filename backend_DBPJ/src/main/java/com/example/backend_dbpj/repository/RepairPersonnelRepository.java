@@ -11,4 +11,7 @@ import java.util.Optional;
 public interface RepairPersonnelRepository extends JpaRepository<RepairPersonnel, Integer> {
     Optional<RepairPersonnel> findByUsername(String username);
     List<RepairPersonnel> findByIsActive(boolean isActive);
+    
+    // 监控查询方法
+    Long countByIsActive(boolean isActive);
 } 

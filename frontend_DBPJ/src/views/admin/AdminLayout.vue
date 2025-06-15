@@ -9,6 +9,10 @@
         <div class="sidebar-header">
           <h3>管理员后台</h3>
         </div>
+        <el-menu-item index="/admin/monitor">
+          <i class="el-icon-data-analysis"></i>
+          <span>监控面板</span>
+        </el-menu-item>
         <el-menu-item index="/admin/assignment">
           <i class="el-icon-document-checked"></i>
           <span>工单分配</span>
